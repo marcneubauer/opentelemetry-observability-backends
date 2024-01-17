@@ -1,0 +1,82 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+#  hostmetrics:
+#    scrapers:
+#      cpu:
+#      disk:
+#      filesystem:
+#      load:
+#      memory:
+#      network:
+#      process:
+#      processes:
+#      paging:
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    const_labels:
+      label1: value1
+
+#  https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/debugexporter/README.md
+  debug:
+    verbosity: detailed
+#    sampling_initial: 5
+#    sampling_thereafter: 200
+
+  zipkin:
+    endpoint: "http://otel-zipkin:9411/api/v2/spans"
+    format: proto
+
+#  jaeger:
+#    endpoint: jaeger-aio:14250
+#    tls:
+#      insecure: true
+
+processors:
+  batch:
+  memory_limiter:
+    # 75% of maximum memory up to 2G
+    limit_mib: 1536
+    # 25% of limit up to 2G
+    spike_limit_mib: 512
+    check_interval: 5s
+
+#  Configuring an extension doesn’t enable it. Extensions are enabled within the service section.
+# https://opentelemetry.io/docs/collector/configuration/#extensions
+extensions:
+  health_check:
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
+#  memory_ballast:
+#    size_mib: 512
+
+# https://opentelemetry.io/docs/collector/configuration/#service
+service:
+  telemetry:
+    logs:
+      level: "debug"
+    metrics:
+      address: ":8888"
+  # Extensions specified below are going to be loaded by the service in the
+  # order given below, and shutdown on reverse order.
+  extensions: [pprof, zpages, health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, zipkin]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, prometheus]
+# TODO Logs not working yet
+#    logs:
+#      receivers: [otlp]
+#      processors: [batch]
+#      exporters: [debug]
