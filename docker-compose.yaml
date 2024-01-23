@@ -29,6 +29,7 @@ services:
     command: ["--config=/etc/otel-collector-config.yaml", "${OTELCOL_ARGS}"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./test-logs:/etc/test-logs:rw
     ports:
       - "1888:1888"   # pprof extension
       - "8888:8888"   # Prometheus metrics exposed by the collector
